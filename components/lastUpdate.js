@@ -7,11 +7,13 @@ import {
 } from 'react-native';
 const { height, width } = Dimensions.get('window');
 
-const LastUpdate = ({time, show}) => {
+const LastUpdate = ({time, show, batteryLevel}) => {
   if (show) {
+    const batteryDisplay = `${Math.round(Number(batteryLevel) * 100)} %`;
     return (
       <View style={styles.root}>
         <Text style={styles.timeDisplay}>Päivitetty viimeksi {time}</Text>
+        <Text style={styles.batteryDisplay}>Akun varaus: {batteryDisplay}</Text>
       </View>
     );
   }
@@ -29,8 +31,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Oxygen-Regular',
     fontSize: width * 0.03,
-    marginBottom: height * 0.02,
   },
+  batteryDisplay: {
+    color: '#FFFFFF',
+    fontFamily: 'Oxygen-Regular',
+    fontSize: width * 0.03,
+    textAlign: 'center',
+    marginBottom: height * 0.02,
+  }
 });
 
 export default LastUpdate;

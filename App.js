@@ -23,6 +23,7 @@ import WeatherProperties from './components/weatherProperties';
 import WeatherIcon from './components/weatherIcon';
 import { loadData } from './components/loadData';
 import LastUpdate from './components/lastUpdate';
+import { getBatteryLevel } from 'react-native-device-info';
 //
 
 
@@ -30,19 +31,33 @@ const App: () => React$Node = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('Data fetch started');
         const response = await loadData();
         response.data.lastUpdate = moment().format('HH:mm');
         setWeatherData(response.data);
       }
       catch(err) {
-        console.log('Error:', err);
+        console.log('Data fetch error:', err);
       }
     };
 
-    // set 15min interval for data fetching
+    const updateBatteryLevel = async () => {
+      try {
+        const battery = await getBatteryLevel();
+        setBatteryLevel(battery);
+      }
+      catch(err) {
+        console.log('Updating battery level error:', err);
+      }
+    }; 
+
+    // call functions
+    fetchData();
+    updateBatteryLevel();
+
+    // set 15min interval for data fetching and updating battery level info
     const updateInterval = setInterval(() => {
       fetchData();
+      updateBatteryLevel();
     }, 900000);
 
     // cleanup 
@@ -51,24 +66,10 @@ const App: () => React$Node = () => {
     }
   }, []);
 
-  useEffect(() => {
-    // fetch data initially
-    const init = async () => {
-      const response = await loadData();
-      response.data.lastUpdate = moment().format('HH:mm');
-      setWeatherData(response.data);
-      console.log(response.data);
-    };
-    try {
-      init();
-    }
-    catch(err) {
-      console.log('Initial data load:', err);
-    }
-  }, []);
 
   const [weatherData, setWeatherData] = useState({});
   const [showLastUpdated, setShowLastUpdated] = useState(false);
+  const [batteryLevel, setBatteryLevel] = useState(1);
 
   const toggleLastUpdated = () => {
     setShowLastUpdated(!showLastUpdated);
@@ -77,22 +78,36 @@ const App: () => React$Node = () => {
   return (
     <>
       <StatusBar hidden={true} barStyle="dark-content" />
-      <View style={styles.container}>
+      <View style={[styles.container, getBackgroundColorBasedOnBattery(batteryLevel)]}>
         <WeatherIcon icon={weatherData.icon} onLongPress={toggleLastUpdated} />
         <Time />
         <Temperature temp={weatherData.temperature}/>
         <WeatherDescription desc={weatherData.description}/>
         <WeatherProperties weatherData={weatherData} />
-        <LastUpdate time={weatherData.lastUpdate} show={showLastUpdated} />
+        <LastUpdate time={weatherData.lastUpdate} batteryLevel={batteryLevel} show={showLastUpdated} />
       </View>
     </>
   );
 };
 
+const getBackgroundColorBasedOnBattery = batteryLevel => {
+  // show red background to indicate low battery level
+  if (batteryLevel >= 0.15) {
+    return {
+      backgroundColor: '#000000'
+    }
+  }
+  else {
+    // red
+    return {
+      backgroundColor: '#FF0000'
+    }
+  }
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
     flexDirection: 'column',
     alignItems: 'center',
   },
